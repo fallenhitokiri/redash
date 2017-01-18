@@ -2,6 +2,7 @@ import moment from 'moment';
 import { each, isString, object, pluck } from 'underscore';
 import { getColumnCleanName } from '../../services/query-result';
 import template from './table.html';
+import QueryFormatter from './query-formatter';
 
 function formatValue($filter, clientConfig, value, type) {
   let formattedValue = value;
@@ -63,12 +64,18 @@ function GridRenderer(clientConfig) {
 
           const columns = $scope.queryResult.getColumns();
           const columnsMap = object(pluck(columns, 'name'), pluck(columns, 'type'));
+          const queryFormatter = new QueryFormatter($scope.queryResult.query_result.query);
 
           const prepareGridData = (data) => {
             const gridData = data.map((row) => {
               const newRow = {};
               each(row, (val, key) => {
-                const formattedValue = formatValue($filter, clientConfig, val, columnsMap[key]);
+                let formattedValue = '';
+                if (queryFormatter.shouldFormat(key)) {
+                  formattedValue = queryFormatter.format(key, val, columnsMap[key]);
+                } else {
+                  formattedValue = formatValue($filter, clientConfig, val, columnsMap[key]);
+                }
                 newRow[getColumnCleanName(key)] = formattedValue;
               });
               return newRow;
